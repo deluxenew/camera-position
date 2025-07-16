@@ -1,27 +1,25 @@
 <template>
   <div class="w-full h-full ref" ref="sceneRef">
 
+    <u-button class="btn" @click="addLeft">
+      box
+    </u-button>
   </div>
 </template>
 
 <script setup lang="ts">
 
 import * as THREE from 'three'
-
+const clock = new THREE.Clock()
+const delta = clock.getDelta()
 const sceneRef = ref<HTMLElement | null>(null)
 const scene = new THREE.Scene()
 let renderer: THREE.WebGLRenderer | null = null
 let camera: THREE.PerspectiveCamera | null = null
 
-onMounted(() => {
-  renderer = new THREE.WebGLRenderer()
-  renderer.setSize(window.innerWidth, window.innerHeight)
+let mixer;
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  camera.position.set(10, 10, 10)
-  camera.lookAt(new THREE.Vector3(0, 0, 0))
-  scene.add(camera)
-
+function addLeft() {
   const aLight = new THREE.AmbientLight('#ffffff', 1)
   scene.add(aLight)
   const rectAreaLight = new THREE.RectAreaLight(0xffffff, 1)
@@ -33,6 +31,26 @@ onMounted(() => {
   }))
   scene.add(box)
   box.position.set(2, 1, 1)
+}
+
+
+function animate() {
+  if (!renderer) return
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  mixer?.update(delta);
+  renderer.render(scene, camera);
+}
+
+onMounted(() => {
+  renderer = new THREE.WebGLRenderer({antialias: true})
+  renderer.setSize(window.innerWidth, window.innerHeight)
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+  camera.position.set(10, 10, 10)
+  camera.lookAt(new THREE.Vector3(0, 0, 0))
+  scene.add(camera)
+
 
   sceneRef.value?.appendChild(renderer.domElement);
   renderer.render(scene, camera)
@@ -44,9 +62,8 @@ onMounted(() => {
     const canvas = renderer.domElement;
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
     camera.updateProjectionMatrix();
-
-    renderer.render(scene, camera)
   })
+  animate()
 })
 
 onBeforeUnmount(() => {
@@ -55,6 +72,11 @@ onBeforeUnmount(() => {
 })
 </script>
 <style>
+
+.btn {
+  position: absolute;
+}
+
 .ref {
   margin: 0;
   padding: 0;
