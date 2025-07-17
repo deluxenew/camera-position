@@ -36,4 +36,8 @@ export class ObjInterface {
         obj.userData.actions = this
         return obj
     }
+
+    setAddAnimation() {
+
+    }
 }
