@@ -30,5 +30,7 @@ export class ObjInterface {
         const geometry = this.getGeometry(objConfig.geometryConfig)
         const material = this.setMaterial(objConfig.materialConfig)
         return new Mesh(geometry, material)
+
+
     }
 }
