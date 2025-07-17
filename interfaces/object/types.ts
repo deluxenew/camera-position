@@ -1,4 +1,4 @@
-import type {Object3DEventMap, Object3D, Mesh} from "three";
+import type {Mesh} from "three";
 import type {ObjInterface} from "./index";
 import type { Config as GeometryConfig } from "../geometry/types";
 import type { Config as MaterialConfig } from "../material/types";
@@ -21,8 +21,7 @@ export interface UserDataCustom {
     actions: ObjInterface
 }
 
-export type ObjectItem = Mesh
 
-export interface ObjItem extends ObjectItem {
+export interface ObjItem extends Mesh {
     userData: UserDataCustom
 }

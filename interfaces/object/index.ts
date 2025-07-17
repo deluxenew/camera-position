@@ -12,7 +12,7 @@ export class ObjInterface {
 
     }
 
-    get objItem(): OBJ.ObjItem {
+    get objItem(): Mesh {
         return this.setObjItem(this.objConfig);
     }
 
@@ -26,11 +26,14 @@ export class ObjInterface {
         return materialInstance.material
     }
 
-    setObjItem(objConfig: OBJ.Config): OBJ.ObjItem {
+    setObjItem(objConfig: OBJ.Config): Mesh {
         const geometry = this.getGeometry(objConfig.geometryConfig)
         const material = this.setMaterial(objConfig.materialConfig)
-        return new Mesh(geometry, material)
-
-
+        const obj = new Mesh(geometry, material)
+        material.dispose()
+        geometry.dispose()
+        obj.userData.config = objConfig
+        obj.userData.actions = this
+        return obj
     }
 }

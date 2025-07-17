@@ -1,5 +1,5 @@
-import type {Scene} from "three";
-import type {Config, ObjItem} from "../object/types";
+import type {Mesh, Scene} from "three";
+import type {Config } from "../object/types";
 import {ObjInterface} from "../object";
 
 export class SceneInterface {
@@ -8,7 +8,7 @@ export class SceneInterface {
         this.scene = scene;
     }
 
-    addObject(objectConfig: Config): ObjItem {
+    addObject(objectConfig: Config): Mesh {
         const objInterface = new ObjInterface(objectConfig);
         const objItem = objInterface.objItem
         this.scene.add(objItem)
