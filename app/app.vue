@@ -11,7 +11,6 @@
 
 import * as THREE from 'three'
 const clock = new THREE.Clock()
-const delta = clock.getDelta()
 const sceneRef = ref<HTMLElement | null>(null)
 const scene = new THREE.Scene()
 let renderer: THREE.WebGLRenderer | null = null
@@ -35,7 +34,7 @@ function addLeft() {
 
 
 function animate() {
-  if (!renderer) return
+  if (!renderer || !camera) return
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   mixer?.update(delta);
@@ -64,6 +63,7 @@ onMounted(() => {
     camera.updateProjectionMatrix();
   })
   animate()
+  addLeft()
 })
 
 onBeforeUnmount(() => {
