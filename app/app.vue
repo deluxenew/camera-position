@@ -1,8 +1,11 @@
 <template>
   <div class="w-full h-full ref" ref="sceneRef">
 
-    <u-button class="btn" @click="addLeft">
-      box
+    <u-button class="btn" @click="setCameraStart">
+      start
+    </u-button>
+    <u-button class="btn move" @click="setCameraMove">
+      move
     </u-button>
   </div>
 </template>
@@ -10,13 +13,16 @@
 <script setup lang="ts">
 
 import * as THREE from 'three'
+import {CameraInterface} from "~~/interfaces/camera";
+import CameraConfig from "~~/configs/CameraConfig";
+import type {AnimationMixer} from "three";
 const clock = new THREE.Clock()
 const sceneRef = ref<HTMLElement | null>(null)
 const scene = new THREE.Scene()
 let renderer: THREE.WebGLRenderer | null = null
 let camera: THREE.PerspectiveCamera | null = null
-
-let mixer;
+let cameraInterface: CameraInterface | null = null
+const mixerList: AnimationMixer[] = []
 
 function addLeft() {
   const aLight = new THREE.AmbientLight('#ffffff', 1)
@@ -29,24 +35,40 @@ function addLeft() {
     transparent: true
   }))
   scene.add(box)
-  box.position.set(2, 1, 1)
+  box.position.set(0, 0, 0)
 }
 
 
 function animate() {
   if (!renderer || !camera) return
   requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  mixer?.update(delta);
+
+  mixerList.forEach((mixer) => {
+    const delta = clock.getDelta();
+    mixer?.update(delta);
+    console.log(123)
+  })
+
   renderer.render(scene, camera);
+}
+function setCameraStart() {
+  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:10, y: 10, z:10})
+}
+
+function setCameraMove() {
+  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:20, y: 20, z:15})
 }
 
 onMounted(() => {
   renderer = new THREE.WebGLRenderer({antialias: true})
   renderer.setSize(window.innerWidth, window.innerHeight)
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  camera.position.set(10, 10, 10)
+
+  const cameraConfig = CameraConfig({width: window.innerWidth, height:window.innerHeight})
+  cameraInterface = new CameraInterface(cameraConfig, mixerList)
+  camera = cameraInterface.camera
+
+  camera.position.set(0,0,0)
   camera.lookAt(new THREE.Vector3(0, 0, 0))
   scene.add(camera)
 
@@ -55,13 +77,13 @@ onMounted(() => {
   renderer.render(scene, camera)
 
 
-  window.addEventListener('resize', () => {
-    if (!renderer || !camera) return
-    renderer.setSize(window.innerWidth, window.innerHeight)
-    const canvas = renderer.domElement;
-    camera.aspect = canvas.clientWidth / canvas.clientHeight;
-    camera.updateProjectionMatrix();
-  })
+  // window.addEventListener('resize', () => {
+  //   if (!renderer || !camera) return
+  //   renderer.setSize(window.innerWidth, window.innerHeight)
+  //   const canvas = renderer.domElement;
+  //   camera.aspect = canvas.clientWidth / canvas.clientHeight;
+  //   camera.updateProjectionMatrix();
+  // })
   animate()
   addLeft()
 })
@@ -75,6 +97,10 @@ onBeforeUnmount(() => {
 
 .btn {
   position: absolute;
+}
+
+.move {
+  left: 50%;
 }
 
 .ref {

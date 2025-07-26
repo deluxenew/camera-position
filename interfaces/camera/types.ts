@@ -7,11 +7,17 @@ export type CameraItem = PerspectiveCamera
 export enum Types {
     PERSPECTIVE = 'PERSPECTIVE',
 }
+
+export enum Names {
+    GENERAL = 'GENERAL',
+}
+
 export function F(a: UpdateKey) {
     return PerspectiveCamera[a];
 }
 
 export interface PerspectiveCameraConfig {
+    name: Names;
     width: number;
     height: number;
     type: Types.PERSPECTIVE
