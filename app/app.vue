@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full ref" ref="sceneRef">
+  <div ref="sceneRef" class="w-full h-full ref">
 
     <u-button class="btn" @click="setCameraStart">
       start
@@ -29,7 +29,7 @@ function addLeft() {
   scene.add(aLight)
   const rectAreaLight = new THREE.RectAreaLight(0xffffff, 1)
   scene.add(rectAreaLight)
-  rectAreaLight.position.set(5, 5, 5)
+  rectAreaLight.position.set(0, 0, 0)
   const box = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 2), new THREE.MeshStandardMaterial({
     color: 0x22dddd,
     transparent: true
@@ -42,9 +42,9 @@ function addLeft() {
 function animate() {
   if (!renderer || !camera) return
   requestAnimationFrame(animate);
-
+  const delta = clock.getDelta();
   mixerList.forEach((mixer) => {
-    const delta = clock.getDelta();
+
     mixer?.update(delta);
     console.log(123)
   })
@@ -52,7 +52,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 function setCameraStart() {
-  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:10, y: 10, z:10})
+  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:3, y: 3, z:3})
 }
 
 function setCameraMove() {

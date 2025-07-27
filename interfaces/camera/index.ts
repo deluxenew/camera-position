@@ -1,131 +1,159 @@
 import {Types} from "./types";
-import type {CameraItem, Config, UpdateKey, UpdateValue} from "./types";
+import type {CameraItem, Config} from "./types";
 import {
     Vector3,
     QuaternionKeyframeTrack,
     PerspectiveCamera,
-    Quaternion,
     VectorKeyframeTrack,
-    AnimationClip, AnimationMixer, LoopOnce, NormalAnimationBlendMode, AnimationAction
+    AnimationClip,
+    AnimationMixer,
+    LoopOnce,
+    NormalAnimationBlendMode, InterpolateSmooth
 } from "three";
 
 export class CameraInterface {
-    #camera: CameraItem
-    #mixer: AnimationMixer
+    #camera: CameraItem;
+    #mixer: AnimationMixer;
     mixerList: AnimationMixer[]
     #clip: AnimationClip
-    #action: AnimationAction
+    targetPosition: Vector3
 
     constructor(public config: Config, mixerList: AnimationMixer[]) {
         this.#camera = this.setCamera(config);
-        this.updateRotation(config)
-        this.updatePosition(config)
-        this.#mixer = new AnimationMixer(this.#camera)
-        this.#mixer.addEventListener('finished', () => {
-            console.log("Анимация завершена!");
-            const idx  = mixerList.find((el) => el.getRoot().uuid === this.#camera.uuid)
-            if (idx ) {
-                // this.mixerList.splice(idx, 1)
-                idx.uncacheClip(this.#clip)
-            }
+        this.updateRotation(config);
+        this.updatePosition(config);
+        this.#mixer = new AnimationMixer(this.#camera);
+        this.mixerList = mixerList;
+        // this.mixerList.push(this.#mixer);
+
+        const lookAtVec = new Vector3(0, 0, 0);
+        const positionVec = new Vector3(0, 0, 0);
+        this.#clip = this.createAnimationClip(lookAtVec, positionVec);
+        // Cleanup listener for finished animations
+        this.#mixer.addEventListener('finished', (e) => {
+            // if (this.#currentAction === e.action) {
+            //     this.#currentAction = null;
+            // }
+            const mixer = e.action.getMixer()
+            // this.#camera.position.set(this.targetPosition.x, this.targetPosition.y, this.targetPosition.z)
+            console.log(this.#camera.position)
+            this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
 
         });
-        this.mixerList = mixerList
-        this.mixerList.push(this.#mixer);
-        this.#clip = this.getClip({x:0, y: 0, z:0},{x:10, y: 10, z:10})
-        this.#action = this.#mixer.clipAction(this.#clip)
-        this.#action.clampWhenFinished = true;  // остаться в последнем кадре
-        this.#action.setLoop(LoopOnce, 1);
+        this.targetPosition = this.#camera.position.clone();
     }
 
-
     get camera(): CameraItem {
-        return this.#camera
+        return this.#camera;
     }
 
     setCamera(config: Config): CameraItem {
         switch (config.type) {
             case Types.PERSPECTIVE: {
-                const {width, height} = config
-                return new PerspectiveCamera(75, width / height, 0.1, 1000)
+                const {width, height} = config;
+                return new PerspectiveCamera(75, width / height, 0.1, 1000);
             }
         }
     }
 
-    getQKFT(newLookAt: {x: number; y: number;z: number}, newPosition: {x: number; y: number;z: number}): QuaternionKeyframeTrack {
-        const currentPosition = this.#camera.position.clone()
-        const currentRotation = this.#camera.rotation
-        const currentQuaternion = new Quaternion().setFromEuler(currentRotation);
+    private createQuaternionTrack(
+        newLookAt: Vector3,
+        newPosition: Vector3,
+        duration: number = 1
+    ): QuaternionKeyframeTrack {
+        const currentQuaternion = this.#camera.quaternion.clone();
 
-        const clone = this.#camera.clone()
-        // Временное перемещаем камеру в новую позицию и поворачиваем к цели
-        clone.position.set(newPosition.x, newPosition.y, newPosition.z);
-        clone.lookAt(new Vector3(newLookAt.x, newLookAt.y, newLookAt.z));
-        const targetQuaternion = clone.quaternion.clone();
-
-
-        // Возвращаем камеру в исходное состояние
-        clone.position.set(currentPosition.x, currentPosition.y, currentPosition.z);
-        clone.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
-
-        // Создаем массив кватернионов для анимации
-        const quaternions = [
-            currentQuaternion.toArray(),  // начальный кватернион (текущий поворот)
-            targetQuaternion.toArray()    // конечный кватернион (новый поворот)
-        ].flat();  // преобразуем в плоский массив [x, y, z, w, x, y, z, w]
+        // Create temporary camera to calculate target rotation
+        const tempCamera = this.#camera.clone();
+        tempCamera.position.copy(newPosition);
+        tempCamera.lookAt(newLookAt);
+        const targetQuaternion = tempCamera.quaternion.clone();
 
         return new QuaternionKeyframeTrack(
-            ".quaternion",  // путь к свойству объекта
-            [0, 1],         // временные метки (0 = начало, 1 = конец)
-            quaternions     // массив кватернионов в виде [x, y, z, w, x, y, z, w]
+            ".quaternion",
+            [0, duration],
+            [...currentQuaternion.toArray(), ...targetQuaternion.toArray()],
         );
     }
 
-    getClip(newLookAt: {x: number; y: number;z: number}, newPosition: {x: number; y: number;z: number}) {
-        const currentPosition = this.#camera.position.clone();
-        const positionTrack = new VectorKeyframeTrack(
+    private createPositionTrack(
+        newPosition: Vector3,
+        duration: number = 1
+    ): VectorKeyframeTrack {
+       const currentPosition = this.#camera.position.clone();
+        console.log(currentPosition, 'currentPosition')
+
+        return new VectorKeyframeTrack(
             ".position",
-            [0, 1],
-            [currentPosition.x, currentPosition.y, currentPosition.z, newPosition.x, newPosition.y, newPosition.z]
+            [0, duration],
+            [
+                currentPosition.x, currentPosition.y, currentPosition.z,
+                newPosition.x, newPosition.y, newPosition.z
+            ],
+            InterpolateSmooth
         );
-
-        // Для анимации поворота (как в коде выше):
-        const quaternionTrack = this.getQKFT(newLookAt, newPosition);
-
-        console.log(quaternionTrack, 'quaternionTrack')
-        console.log(positionTrack, 'positionTrack')
-        // Создаем анимационную клип-сцену:
-        return new AnimationClip("CameraMove", -1, [positionTrack, quaternionTrack],NormalAnimationBlendMode);
     }
 
-    setMoveCamera(newLookAt: {x: number; y: number;z: number}, newPosition: {x: number; y: number;z: number}): void {
-        const clip = this.getClip(newLookAt, newPosition)
-        this.#mixer.uncacheClip(this.#clip)
-        this.#action = this.#mixer.clipAction(clip);
-        const action = new AnimationAction(this.#mixer, clip, this.#camera)
-        this.#action.clampWhenFinished = true;  // остаться в последнем кадре
-        this.#action.setLoop(LoopOnce, 1);
-        // action.crossFadeFrom(action, 1, true)
-        this.#action.play()
-        console.log(this.#action.getClip())
+    private createAnimationClip(
+        newLookAt: Vector3,
+        newPosition: Vector3,
+        duration: number = 1
+    ): AnimationClip {
+        const name = 'CameraAnimation_' + this.mixerList.length;
+        const positionTrack = this.createPositionTrack(newPosition, duration);
+        const quaternionTrack = this.createQuaternionTrack(newLookAt, newPosition, duration);
 
+        return new AnimationClip(
+            name,
+            -1,
+            [positionTrack, quaternionTrack],
+            NormalAnimationBlendMode
+        );
+    }
+
+    setMoveCamera(newLookAt: { x: number; y: number; z: number }, newPosition: {
+        x: number;
+        y: number;
+        z: number
+    }): void {
+        // Stop current animation if any
+        this.#mixer = new AnimationMixer(this.#camera);
+
+
+
+        // Convert to Vector3 for easier handling
+        const lookAtVec = new Vector3(newLookAt.x, newLookAt.y, newLookAt.z);
+        this.targetPosition = new Vector3(newPosition.x, newPosition.y, newPosition.z);
+
+        // Create new animation
+        this.#clip = this.createAnimationClip(lookAtVec, this.targetPosition);
+        const action = this.#mixer.clipAction(this.#clip);
+
+        // Configure animation
+        action.clampWhenFinished = true;
+        action.setLoop(LoopOnce, 1);
+        action.play();
+
+        this.mixerList.forEach(mixer => {
+            mixer.stopAllAction()
+            this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
+        })
+        this.mixerList.push(this.#mixer);
+
+
+        this.#mixer.addEventListener('finished', (e) => {
+            const mixer = e.action.getMixer()
+            this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
+        });
     }
 
     updateRotation(config: Config): void {
-        const {rotation: {x, y, z}} = config
-        this.#camera.rotation.set(x, y, z)
+        const {rotation: {x, y, z}} = config;
+        this.#camera.rotation.set(x, y, z);
     }
 
     updatePosition(config: Config): void {
-        const {position: {x, y, z}} = config
-        this.#camera.position.set(x, y, z)
+        const {position: {x, y, z}} = config;
+        this.#camera.position.set(x, y, z);
     }
-
-    // updateCameraLookAt(x: number, y: number, z: number): void {
-    //     this.#camera.lookAt(x, y, z)
-    // }
-    //
-    // updateCameraParam(key: UpdateKey, value: UpdateValue): void {
-    //     this.#camera[key] = value
-    // }
 }
