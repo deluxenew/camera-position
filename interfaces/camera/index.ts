@@ -1,15 +1,14 @@
 import {Types} from "./types";
 import type {CameraItem, Config} from "./types";
-import {
+import type {
     Vector3,
     QuaternionKeyframeTrack,
-    PerspectiveCamera,
     VectorKeyframeTrack,
     AnimationClip,
-    AnimationMixer,
-    LoopOnce,
-    NormalAnimationBlendMode, InterpolateSmooth
+    AnimationMixer
 } from "three";
+
+import * as THREE from "three";
 
 export class CameraInterface {
     #camera: CameraItem;
@@ -22,21 +21,15 @@ export class CameraInterface {
         this.#camera = this.setCamera(config);
         this.updateRotation(config);
         this.updatePosition(config);
-        this.#mixer = new AnimationMixer(this.#camera);
+        this.#mixer = new THREE.AnimationMixer(this.#camera);
         this.mixerList = mixerList;
-        // this.mixerList.push(this.#mixer);
 
-        const lookAtVec = new Vector3(0, 0, 0);
-        const positionVec = new Vector3(0, 0, 0);
+        const lookAtVec = new THREE.Vector3(0, 0, 0);
+        const positionVec = new THREE.Vector3(20, 3, 20);
         this.#clip = this.createAnimationClip(lookAtVec, positionVec);
         // Cleanup listener for finished animations
         this.#mixer.addEventListener('finished', (e) => {
-            // if (this.#currentAction === e.action) {
-            //     this.#currentAction = null;
-            // }
             const mixer = e.action.getMixer()
-            // this.#camera.position.set(this.targetPosition.x, this.targetPosition.y, this.targetPosition.z)
-            console.log(this.#camera.position)
             this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
 
         });
@@ -51,7 +44,7 @@ export class CameraInterface {
         switch (config.type) {
             case Types.PERSPECTIVE: {
                 const {width, height} = config;
-                return new PerspectiveCamera(75, width / height, 0.1, 1000);
+                return new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
             }
         }
     }
@@ -69,7 +62,7 @@ export class CameraInterface {
         tempCamera.lookAt(newLookAt);
         const targetQuaternion = tempCamera.quaternion.clone();
 
-        return new QuaternionKeyframeTrack(
+        return new THREE.QuaternionKeyframeTrack(
             ".quaternion",
             [0, duration],
             [...currentQuaternion.toArray(), ...targetQuaternion.toArray()],
@@ -81,16 +74,14 @@ export class CameraInterface {
         duration: number = 1
     ): VectorKeyframeTrack {
        const currentPosition = this.#camera.position.clone();
-        console.log(currentPosition, 'currentPosition')
 
-        return new VectorKeyframeTrack(
+        return new THREE.VectorKeyframeTrack(
             ".position",
             [0, duration],
             [
                 currentPosition.x, currentPosition.y, currentPosition.z,
                 newPosition.x, newPosition.y, newPosition.z
             ],
-            InterpolateSmooth
         );
     }
 
@@ -103,11 +94,11 @@ export class CameraInterface {
         const positionTrack = this.createPositionTrack(newPosition, duration);
         const quaternionTrack = this.createQuaternionTrack(newLookAt, newPosition, duration);
 
-        return new AnimationClip(
+        return new THREE.AnimationClip(
             name,
             -1,
             [positionTrack, quaternionTrack],
-            NormalAnimationBlendMode
+            THREE.NormalAnimationBlendMode
         );
     }
 
@@ -117,27 +108,28 @@ export class CameraInterface {
         z: number
     }): void {
         // Stop current animation if any
-        this.#mixer = new AnimationMixer(this.#camera);
-
-
+        this.#mixer = new THREE.AnimationMixer(this.#camera);
 
         // Convert to Vector3 for easier handling
-        const lookAtVec = new Vector3(newLookAt.x, newLookAt.y, newLookAt.z);
-        this.targetPosition = new Vector3(newPosition.x, newPosition.y, newPosition.z);
+        const lookAtVec = new THREE.Vector3(newLookAt.x, newLookAt.y, newLookAt.z);
+        this.targetPosition = new THREE.Vector3(newPosition.x, newPosition.y, newPosition.z);
 
         // Create new animation
         this.#clip = this.createAnimationClip(lookAtVec, this.targetPosition);
+        this.#clip.optimize()
         const action = this.#mixer.clipAction(this.#clip);
 
         // Configure animation
         action.clampWhenFinished = true;
-        action.setLoop(LoopOnce, 1);
+        action.setLoop(THREE.LoopOnce, 1);
+
         action.play();
 
         this.mixerList.forEach(mixer => {
-            mixer.stopAllAction()
+            mixer.removeEventListener('finished', () => {})
             this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
         })
+
         this.mixerList.push(this.#mixer);
 
 

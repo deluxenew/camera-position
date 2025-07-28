@@ -36,6 +36,11 @@ function addLeft() {
   }))
   scene.add(box)
   box.position.set(0, 0, 0)
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(20, 20, 0.001), new THREE.MeshStandardMaterial({
+    color: '#333333',
+    transparent: true
+  }))
+  scene.add(wall)
 }
 
 
@@ -52,11 +57,11 @@ function animate() {
   renderer.render(scene, camera);
 }
 function setCameraStart() {
-  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:3, y: 3, z:3})
+  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:20, y: 3, z:20})
 }
 
 function setCameraMove() {
-  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:20, y: 20, z:15})
+  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:-20, y: 3, z:-15})
 }
 
 onMounted(() => {
@@ -68,7 +73,7 @@ onMounted(() => {
   cameraInterface = new CameraInterface(cameraConfig, mixerList)
   camera = cameraInterface.camera
 
-  camera.position.set(0,0,0)
+  // camera.position.set(0,0,0)
   camera.lookAt(new THREE.Vector3(0, 0, 0))
   scene.add(camera)
 
@@ -77,13 +82,13 @@ onMounted(() => {
   renderer.render(scene, camera)
 
 
-  // window.addEventListener('resize', () => {
-  //   if (!renderer || !camera) return
-  //   renderer.setSize(window.innerWidth, window.innerHeight)
-  //   const canvas = renderer.domElement;
-  //   camera.aspect = canvas.clientWidth / canvas.clientHeight;
-  //   camera.updateProjectionMatrix();
-  // })
+  window.addEventListener('resize', () => {
+    if (!renderer || !camera) return
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    const canvas = renderer.domElement;
+    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.updateProjectionMatrix();
+  })
   animate()
   addLeft()
 })
