@@ -51,7 +51,7 @@ function setCameraStart() {
 }
 
 function setCameraMove() {
-  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-10, 5, -45))
+  cameraInterface?.setMoveCamera(new THREE.Vector3(3, 4, 3), new THREE.Vector3(20, 5, 10))
 }
 
 

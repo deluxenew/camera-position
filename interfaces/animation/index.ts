@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { AnimationMixer } from 'three';
+import { AnimationMixer } from 'three';
 
 export class AnimationControlledRenderer {
     private scene: THREE.Scene;
@@ -21,7 +21,7 @@ export class AnimationControlledRenderer {
     }
 
     /**
-     * Добавляет миксер в отслеживаемые и запускает рендеринг, если нужно
+     * Добавляет миксер в отслеживаемые и запускает рендеринг
      */
     addMixer(mixer: AnimationMixer): void {
         if (this.mixers.includes(mixer)) return;
@@ -30,36 +30,29 @@ export class AnimationControlledRenderer {
     }
 
     /**
-     * Удаляет миксер и останавливает рендеринг, если анимаций не осталось
+     * Удаляет миксер из отслеживаемых
      */
     removeMixer(mixer: AnimationMixer): void {
         const index = this.mixers.indexOf(mixer);
         if (index !== -1) {
             this.mixers.splice(index, 1);
         }
-        // Рендеринг остановится автоматически в animate()
     }
 
     /**
-     * Основной цикл рендеринга
+     * Основной цикл рендеринга (точное соответствие вашей логике)
      */
     private animate(): void {
         const delta = this.clock.getDelta();
         let needsUpdate = false;
-        console.log(123)
-        // Обновляем все анимации
+        // Обновляем все анимации и проверяем наличие изменений
         this.mixers.forEach(mixer => {
             mixer.update(delta);
             needsUpdate = true;
         });
 
-        // Рендерим только если были изменения
         if (needsUpdate) {
             this.renderer.render(this.scene, this.camera);
-        }
-
-        // Продолжаем рендеринг, если есть активные анимации
-        if (this.mixers.length > 0) {
             this.animationId = requestAnimationFrame(() => this.animate());
         } else {
             this.isRendering = false;
@@ -68,26 +61,35 @@ export class AnimationControlledRenderer {
     }
 
     /**
-     * Запускает рендеринг, если есть анимации и он не запущен
+     * Запускает рендеринг, если он ещё не активен
      */
     private startRenderingIfNeeded(): void {
-        if (this.mixers.length > 0 && !this.isRendering) {
+        if (!this.isRendering) {
             this.isRendering = true;
+            this.clock.start(); // Сбрасываем таймер
             this.animate();
         }
     }
 
-    /**
-     * Принудительная остановка всех анимаций и рендеринга
-     */
     stopAll(): void {
         this.mixers.forEach(mixer => mixer.stopAllAction());
         this.mixers = [];
+    }
+    /**
+     * Полностью останавливает рендеринг
+     */
+    stopRendering(): void {
         if (this.animationId !== null) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
         }
         this.isRendering = false;
     }
-}
 
+    /**
+     * Принудительно перезапускает рендеринг (полезно при изменениях сцены)
+     */
+    forceRender(): void {
+        this.renderer.render(this.scene, this.camera);
+    }
+}

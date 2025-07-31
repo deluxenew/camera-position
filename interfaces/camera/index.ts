@@ -3,7 +3,7 @@ import type {CameraItem, Config} from "./types";
 import { Euler
 } from "three";
 import type {Vector3, QuaternionKeyframeTrack, VectorKeyframeTrack, AnimationClip, AnimationMixer,
-    
+
      AnimationAction} from "three";
 
 import * as THREE from "three";
