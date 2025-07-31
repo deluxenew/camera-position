@@ -1,12 +1,10 @@
 import {Types} from "./types";
 import type {CameraItem, Config} from "./types";
-import {
-    type Vector3,
-    type QuaternionKeyframeTrack,
-    type VectorKeyframeTrack,
-    type AnimationClip,
-    type AnimationMixer, AnimationAction, Euler
+import { Euler
 } from "three";
+import type {Vector3, QuaternionKeyframeTrack, VectorKeyframeTrack, AnimationClip, AnimationMixer,
+    
+     AnimationAction} from "three";
 
 import * as THREE from "three";
 import getSmoothRotationMixer from "~~/interfaces/camera/utils";
@@ -20,7 +18,7 @@ export class CameraInterface {
     targetPosition: Vector3
     controlledRenderer: AnimationControlledRenderer | null = null;
 
-    constructor(public config: Config, mixerList: AnimationMixer[]) {
+    constructor(public config: Config) {
         this.#camera = this.setCamera(config);
         this.updateRotation(config);
         this.updatePosition(config);

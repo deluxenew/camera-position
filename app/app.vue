@@ -47,29 +47,6 @@ function addLeft() {
   scene.add(wall)
 }
 
-const list = computed(() => mixerList.value.length)
-
-watch(() => cameraInterface?.mixerList.length, (v) => {
-console.log(v)
-  if (v) {
-    animate()
-  }
-}, {flush: "post"})
-
-function animate() {
-  if (!renderer || !camera) return
-  console.log(cameraInterface?.mixerList)
-
-  const a = requestAnimationFrame(animate);
-
-  const delta = clock.getDelta();
-  cameraInterface?.mixerList.forEach((mixer) => {
-    mixer?.update(delta);
-  })
-
-  renderer.render(scene, camera);
-  if (!cameraInterface?.mixerList.length) cancelAnimationFrame(a)
-}
 
 function setCameraStart() {
   cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(20, 5, 10))
@@ -86,7 +63,7 @@ onMounted(() => {
 
 
   const cameraConfig = CameraConfig({width: window.innerWidth, height: window.innerHeight})
-  cameraInterface = new CameraInterface(cameraConfig, mixerList.value)
+  cameraInterface = new CameraInterface(cameraConfig)
   camera = cameraInterface.camera
 
   // camera.position.set(0,0,0)
@@ -106,7 +83,6 @@ onMounted(() => {
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
     camera.updateProjectionMatrix();
   })
-  animate()
   addLeft()
 })
 
