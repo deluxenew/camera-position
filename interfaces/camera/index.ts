@@ -37,7 +37,7 @@ export class CameraInterface {
         this.controlledRenderer = controlledRenderer;
     }
 
-    finishAnimation(e: {action: AnimationAction; direction: string}) {
+    finishAnimation(e: {action: AnimationAction; direction: number}) {
         const mixer = e.action.getMixer()
         this.controlledRenderer?.removeMixer(mixer)
     }
