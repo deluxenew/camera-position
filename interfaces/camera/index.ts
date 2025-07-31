@@ -1,39 +1,47 @@
 import {Types} from "./types";
 import type {CameraItem, Config} from "./types";
-import type {
-    Vector3,
-    QuaternionKeyframeTrack,
-    VectorKeyframeTrack,
-    AnimationClip,
-    AnimationMixer
+import {
+    type Vector3,
+    type QuaternionKeyframeTrack,
+    type VectorKeyframeTrack,
+    type AnimationClip,
+    type AnimationMixer, AnimationAction, Euler
 } from "three";
 
 import * as THREE from "three";
+import getSmoothRotationMixer from "~~/interfaces/camera/utils";
+import type {AnimationControlledRenderer} from "~~/interfaces/animation";
 
 export class CameraInterface {
     #camera: CameraItem;
     #mixer: AnimationMixer;
-    mixerList: AnimationMixer[]
+    mixerList: AnimationMixer[] = []
     #clip: AnimationClip
     targetPosition: Vector3
+    controlledRenderer: AnimationControlledRenderer | null = null;
 
     constructor(public config: Config, mixerList: AnimationMixer[]) {
         this.#camera = this.setCamera(config);
         this.updateRotation(config);
         this.updatePosition(config);
         this.#mixer = new THREE.AnimationMixer(this.#camera);
-        this.mixerList = mixerList;
+
 
         const lookAtVec = new THREE.Vector3(0, 0, 0);
-        const positionVec = new THREE.Vector3(20, 3, 20);
+        const positionVec = new THREE.Vector3(-10, 3, 0);
         this.#clip = this.createAnimationClip(lookAtVec, positionVec);
         // Cleanup listener for finished animations
-        this.#mixer.addEventListener('finished', (e) => {
-            const mixer = e.action.getMixer()
-            this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
-
-        });
+        this.#mixer.addEventListener('finished', this.finishAnimation);
         this.targetPosition = this.#camera.position.clone();
+    }
+
+    setControlledRenderer(controlledRenderer: AnimationControlledRenderer) {
+        this.controlledRenderer = controlledRenderer;
+    }
+
+    finishAnimation(e: {action: AnimationAction; direction: string}) {
+        const mixer = e.action.getMixer()
+        this.controlledRenderer?.removeMixer(mixer)
     }
 
     get camera(): CameraItem {
@@ -54,18 +62,27 @@ export class CameraInterface {
         newPosition: Vector3,
         duration: number = 1
     ): QuaternionKeyframeTrack {
-        const currentQuaternion = this.#camera.quaternion.clone();
+        const currentRotation = this.#camera.rotation.clone();
 
-        // Create temporary camera to calculate target rotation
         const tempCamera = this.#camera.clone();
         tempCamera.position.copy(newPosition);
         tempCamera.lookAt(newLookAt);
-        const targetQuaternion = tempCamera.quaternion.clone();
+        const targetRotation = tempCamera.rotation.clone();
+
+        const {quatValues, times} = getSmoothRotationMixer(this.#camera, {
+            duration,
+            steps: 1000,
+            startEuler: new Euler(currentRotation.x, currentRotation.y, currentRotation.z),
+            endEuler: new Euler(targetRotation.x, targetRotation.y, targetRotation.z),
+        })
+
+        // Create temporary camera to calculate target rotation
+
 
         return new THREE.QuaternionKeyframeTrack(
             ".quaternion",
-            [0, duration],
-            [...currentQuaternion.toArray(), ...targetQuaternion.toArray()],
+            times,
+            quatValues,
         );
     }
 
@@ -118,24 +135,16 @@ export class CameraInterface {
         this.#clip = this.createAnimationClip(lookAtVec, this.targetPosition);
         this.#clip.optimize()
         const action = this.#mixer.clipAction(this.#clip);
-
-        // Configure animation
+        this.controlledRenderer?.stopAll()
         action.clampWhenFinished = true;
         action.setLoop(THREE.LoopOnce, 1);
-
+        this.controlledRenderer?.addMixer(this.#mixer);
         action.play();
-
-        this.mixerList.forEach(mixer => {
-            mixer.removeEventListener('finished', () => {})
-            this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
-        })
-
-        this.mixerList.push(this.#mixer);
 
 
         this.#mixer.addEventListener('finished', (e) => {
             const mixer = e.action.getMixer()
-            this.mixerList.splice(this.mixerList.indexOf(mixer), 1);
+            this.controlledRenderer?.removeMixer(mixer)
         });
     }
 

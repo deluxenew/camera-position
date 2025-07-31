@@ -1,10 +1,10 @@
 <template>
   <div ref="sceneRef" class="w-full h-full ref">
 
-    <u-button class="btn" @click="setCameraStart">
+    <u-button class="btn " @click="setCameraStart">
       start
     </u-button>
-    <u-button class="btn move" @click="setCameraMove">
+    <u-button class="btn move w-1/2" @click="setCameraMove">
       move
     </u-button>
   </div>
@@ -16,13 +16,17 @@ import * as THREE from 'three'
 import {CameraInterface} from "~~/interfaces/camera";
 import CameraConfig from "~~/configs/CameraConfig";
 import type {AnimationMixer} from "three";
+import {AnimationControlledRenderer} from "~~/interfaces/animation";
+
 const clock = new THREE.Clock()
 const sceneRef = ref<HTMLElement | null>(null)
 const scene = new THREE.Scene()
 let renderer: THREE.WebGLRenderer | null = null
 let camera: THREE.PerspectiveCamera | null = null
 let cameraInterface: CameraInterface | null = null
-const mixerList: AnimationMixer[] = []
+const mixerList = ref<AnimationMixer[]>([])
+
+let controlledRenderer: AnimationControlledRenderer | null = null
 
 function addLeft() {
   const aLight = new THREE.AmbientLight('#ffffff', 1)
@@ -43,44 +47,57 @@ function addLeft() {
   scene.add(wall)
 }
 
+const list = computed(() => mixerList.value.length)
+
+watch(() => cameraInterface?.mixerList.length, (v) => {
+console.log(v)
+  if (v) {
+    animate()
+  }
+}, {flush: "post"})
 
 function animate() {
   if (!renderer || !camera) return
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  mixerList.forEach((mixer) => {
+  console.log(cameraInterface?.mixerList)
 
+  const a = requestAnimationFrame(animate);
+
+  const delta = clock.getDelta();
+  cameraInterface?.mixerList.forEach((mixer) => {
     mixer?.update(delta);
-    console.log(123)
   })
 
   renderer.render(scene, camera);
+  if (!cameraInterface?.mixerList.length) cancelAnimationFrame(a)
 }
+
 function setCameraStart() {
-  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:20, y: 3, z:20})
+  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(20, 5, 10))
 }
 
 function setCameraMove() {
-  cameraInterface?.setMoveCamera({x:0, y: 0, z:0},{x:-20, y: 3, z:-15})
+  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(-10, 5, -45))
 }
+
 
 onMounted(() => {
   renderer = new THREE.WebGLRenderer({antialias: true})
   renderer.setSize(window.innerWidth, window.innerHeight)
 
 
-  const cameraConfig = CameraConfig({width: window.innerWidth, height:window.innerHeight})
-  cameraInterface = new CameraInterface(cameraConfig, mixerList)
+  const cameraConfig = CameraConfig({width: window.innerWidth, height: window.innerHeight})
+  cameraInterface = new CameraInterface(cameraConfig, mixerList.value)
   camera = cameraInterface.camera
 
   // camera.position.set(0,0,0)
   camera.lookAt(new THREE.Vector3(0, 0, 0))
   scene.add(camera)
-
+  controlledRenderer = new AnimationControlledRenderer(scene, camera, renderer);
+  cameraInterface.setControlledRenderer(controlledRenderer)
 
   sceneRef.value?.appendChild(renderer.domElement);
   renderer.render(scene, camera)
-
+  setCameraStart()
 
   window.addEventListener('resize', () => {
     if (!renderer || !camera) return
@@ -102,6 +119,7 @@ onBeforeUnmount(() => {
 
 .btn {
   position: absolute;
+  padding: 10px 20px;
 }
 
 .move {
