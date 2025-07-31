@@ -15,16 +15,14 @@
 import * as THREE from 'three'
 import {CameraInterface} from "~~/interfaces/camera";
 import CameraConfig from "~~/configs/CameraConfig";
-import type {AnimationMixer} from "three";
 import {AnimationControlledRenderer} from "~~/interfaces/animation";
 
-const clock = new THREE.Clock()
+
 const sceneRef = ref<HTMLElement | null>(null)
 const scene = new THREE.Scene()
 let renderer: THREE.WebGLRenderer | null = null
 let camera: THREE.PerspectiveCamera | null = null
 let cameraInterface: CameraInterface | null = null
-const mixerList = ref<AnimationMixer[]>([])
 
 let controlledRenderer: AnimationControlledRenderer | null = null
 
