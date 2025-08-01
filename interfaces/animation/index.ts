@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { AnimationMixer } from 'three';
+import type { AnimationMixer } from 'three';
 
 export class AnimationControlledRenderer {
     private scene: THREE.Scene;
