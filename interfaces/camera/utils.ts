@@ -1,6 +1,8 @@
 import * as THREE from "three";
 
 interface RotationConfig {
+    startPosition: THREE.Vector3;
+    endPosition: THREE.Vector3;
     startEuler?: THREE.Euler; // Начальный поворот (по умолчанию текущий поворот объекта)
     endEuler: THREE.Euler;    // Конечный поворот
     duration?: number;        // Длительность (сек)
@@ -10,8 +12,10 @@ interface RotationConfig {
 export default function getSmoothRotationMixer(
     yourObject: THREE.Object3D,
     config: RotationConfig
-): { quatValues: ArrayLike<number>; times: number[] } {
+): { quatValues: ArrayLike<number>; posValues: ArrayLike<number>; times: number[] } {
     const {
+        startPosition,
+        endPosition,
         startEuler,
         endEuler,
         duration = 4,
@@ -20,12 +24,12 @@ export default function getSmoothRotationMixer(
 
     const times = [];
     const quatValues = [];
+    const posValues = [];
 
     // Конвертируем углы Эйлера в кватернионы
     const startQuat = startEuler
         ? new THREE.Quaternion().setFromEuler(startEuler)
         : yourObject.quaternion.clone();
-
     const endQuat = new THREE.Quaternion().setFromEuler(endEuler);
 
     // Easing-функция для плавности
@@ -36,9 +40,16 @@ export default function getSmoothRotationMixer(
         const t = (i / steps) * duration;
         const easedT = cubicEaseInOut(t / duration);
 
-        // Сферическая интерполяция
+        // Интерполяция вращения
         const currentQuat = new THREE.Quaternion();
         currentQuat.slerpQuaternions(startQuat, endQuat, easedT);
+
+        // Интерполяция позиции с той же функцией плавности
+        const currentPos = new THREE.Vector3().lerpVectors(
+            startPosition,
+            endPosition,
+            easedT
+        );
 
         times.push(t);
         quatValues.push(
@@ -47,6 +58,11 @@ export default function getSmoothRotationMixer(
             currentQuat.z,
             currentQuat.w
         );
+        posValues.push(
+            currentPos.x,
+            currentPos.y,
+            currentPos.z
+        );
     }
-    return {quatValues, times}
+    return {quatValues, posValues, times};
 }

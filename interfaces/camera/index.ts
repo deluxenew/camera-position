@@ -55,33 +55,44 @@ export class CameraInterface {
         }
     }
 
-    private createQuaternionTrack(
+    private createTracks(
         newLookAt: Vector3,
         newPosition: Vector3,
         duration: number = 1
-    ): QuaternionKeyframeTrack {
+    ): {positionTrack: THREE.VectorKeyframeTrack; quatTrack: THREE.QuaternionKeyframeTrack} {
         const currentRotation = this.#camera.rotation.clone();
+        const currentPosition = this.#camera.position.clone();
 
         const tempCamera = this.#camera.clone();
         tempCamera.position.copy(newPosition);
         tempCamera.lookAt(newLookAt);
         const targetRotation = tempCamera.rotation.clone();
 
-        const {quatValues, times} = getSmoothRotationMixer(this.#camera, {
+        const {quatValues, times, posValues} = getSmoothRotationMixer(this.#camera, {
             duration,
             steps: 1000,
             startEuler: new Euler(currentRotation.x, currentRotation.y, currentRotation.z),
             endEuler: new Euler(targetRotation.x, targetRotation.y, targetRotation.z),
+            startPosition: currentPosition,
+            endPosition: newPosition,
         })
+
+
 
         // Create temporary camera to calculate target rotation
 
-
-        return new THREE.QuaternionKeyframeTrack(
-            ".quaternion",
-            times,
-            quatValues,
-        );
+        return {
+            positionTrack: new THREE.VectorKeyframeTrack(
+                ".position",
+                times,
+                posValues
+            ),
+            quatTrack: new THREE.QuaternionKeyframeTrack(
+                ".quaternion",
+                times,
+                quatValues,
+            )
+        }
     }
 
     private createPositionTrack(
@@ -106,13 +117,13 @@ export class CameraInterface {
         duration: number = 1
     ): AnimationClip {
         const name = 'CameraAnimation_' + this.mixerList.length;
-        const positionTrack = this.createPositionTrack(newPosition, duration);
-        const quaternionTrack = this.createQuaternionTrack(newLookAt, newPosition, duration);
+        // const positionTrack = this.createPositionTrack(newPosition, duration);
+        const {positionTrack,quatTrack} = this.createTracks(newLookAt, newPosition, duration);
 
         return new THREE.AnimationClip(
             name,
             -1,
-            [positionTrack, quaternionTrack],
+            [positionTrack, quatTrack],
             THREE.NormalAnimationBlendMode
         );
     }

@@ -47,11 +47,11 @@ function addLeft() {
 
 
 function setCameraStart() {
-  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(20, 5, 10))
+  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(20, 5, 210))
 }
 
 function setCameraMove() {
-  cameraInterface?.setMoveCamera(new THREE.Vector3(3, 4, 3), new THREE.Vector3(20, 5, 10))
+  cameraInterface?.setMoveCamera(new THREE.Vector3(3, 4, 3), new THREE.Vector3(-20, 5, 10))
 }
 
 
