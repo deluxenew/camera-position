@@ -1,43 +1,62 @@
-import {Mesh} from "three";
+import { Mesh } from "three";
 import type * as OBJ from "./types";
-import type {Config as GeometryConfig, GeometryItem} from "../geometry/types";
-import type {Config as MaterialConfig, MaterialItem} from "../material/types";
+import type { Config as GeometryConfig, GeometryItem } from "../geometry/types";
+import type { Config as MaterialConfig, MaterialItem } from "../material/types";
 
-import {GeometryInterface} from "../geometry";
-import {MaterialInterface} from "../material";
-
+import { GeometryInterface } from "../geometry";
+import { MaterialInterface } from "../material";
 
 export class ObjInterface {
     constructor(public objConfig: OBJ.Config) {
-
+        if (!objConfig) {
+            throw new Error("ObjConfig is required");
+        }
     }
 
     get objItem(): Mesh {
-        return this.setObjItem(this.objConfig);
+        return this.createObjItem(this.objConfig);
     }
 
-    getGeometry(geometryConfig: GeometryConfig): GeometryItem {
-        const geometryInterface = new GeometryInterface(geometryConfig)
-        return geometryInterface.geometry
+    private createGeometry(geometryConfig: GeometryConfig): GeometryItem {
+        if (!geometryConfig) {
+            throw new Error("GeometryConfig is required");
+        }
+        const geometryInterface = new GeometryInterface(geometryConfig);
+        return geometryInterface.geometry;
     }
 
-    setMaterial(materialConfig: MaterialConfig): MaterialItem {
-        const materialInstance = new MaterialInterface(materialConfig)
-        return materialInstance.material
+    private createMaterial(materialConfig: MaterialConfig): MaterialItem {
+        if (!materialConfig) {
+            throw new Error("MaterialConfig is required");
+        }
+        const materialInstance = new MaterialInterface(materialConfig);
+        return materialInstance.material;
     }
 
-    setObjItem(objConfig: OBJ.Config): Mesh {
-        const geometry = this.getGeometry(objConfig.geometryConfig)
-        const material = this.setMaterial(objConfig.materialConfig)
-        const obj = new Mesh(geometry, material)
-        material.dispose()
-        geometry.dispose()
-        obj.userData.config = objConfig
-        obj.userData.actions = this
-        return obj
+    private createObjItem(objConfig: OBJ.Config): Mesh {
+        if (!objConfig) {
+            throw new Error("ObjConfig is required");
+        }
+
+        const geometry = this.createGeometry(objConfig.geometryConfig);
+        const material = this.createMaterial(objConfig.materialConfig);
+
+        const obj = new Mesh(geometry, material);
+
+        // Не вызываем dispose() здесь, так как меш использует эти ресурсы
+        // Вместо этого можно сохранить ссылки для последующего освобождения
+        obj.userData.config = objConfig;
+        obj.userData.actions = this;
+        obj.userData.dispose = () => {
+            material.dispose();
+            geometry.dispose();
+        };
+
+        return obj;
     }
 
-    setAddAnimation() {
-
+    // Пример реализации метода для анимации
+    setAddAnimation(mesh: Mesh, animationConfig: any): void {
+        // Реализация анимации
     }
 }

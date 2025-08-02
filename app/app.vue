@@ -1,11 +1,14 @@
 <template>
   <div ref="sceneRef" class="w-full h-full ref">
     <div class="controls">
-      <u-button class="btn" @click="setCameraStart">
-        start
+      <u-button class="btn" @click="setCameraLeft">
+        left
       </u-button>
-      <u-button class="btn move w-1/2" @click="setCameraMove">
-        move
+      <u-button class="btn move w-1/2" @click="setCameraCenter">
+        center
+      </u-button>
+      <u-button class="btn move w-1/2" @click="setCametaRight">
+        rigth
       </u-button>
     </div>
 
@@ -63,13 +66,13 @@ function createBoxesAlongZ(count: number, startZ: number = 0, step: number = 2):
 // Функция для построения сцены с ящиками на осях
 function buildScene() {
   // Очищаем сцену
-  while(scene.children.length > 0) {
-    scene.remove(scene.children[0]);
+  while (scene.children.length > 0) {
+    if (scene.children[0]) scene.remove(scene.children[0]);
   }
 
   // Создаем ящики вдоль осей
-  createBoxesAlongX(10, 0, 2); // 10 ящиков по оси X от -10 с шагом 2
-  createBoxesAlongZ(10, 0, 2); // 10 ящиков по оси Z от -10 с шагом 2
+  createBoxesAlongX(10, 0, 1.1); // 10 ящиков по оси X от -10 с шагом 2
+  createBoxesAlongZ(10, 0, 1.1); // 10 ящиков по оси Z от -10 с шагом 2
 
   // Добавляем центральный ящик в начале координат
   createBoxOnAxis(new THREE.Vector3(0, 0, 0));
@@ -87,16 +90,54 @@ function buildScene() {
   scene.add(axesHelper);
 }
 
-function setCameraStart() {
-  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 10), new THREE.Vector3(10, 5, 10))
+function setCameraLeft() {
+  cameraInterface?.setMoveCamera(getBoxesLineCenter('z'), new THREE.Vector3(10, 5, 10))
 }
 
-function setCameraMove() {
-  cameraInterface?.setMoveCamera(new THREE.Vector3(10, 0, 0), new THREE.Vector3(10, 5, 10))
+function setCameraCenter() {
+  cameraInterface?.setMoveCamera(new THREE.Vector3(0, 0, 0), new THREE.Vector3(10, 5, 10))
+}
+
+
+function setCametaRight() {
+  cameraInterface?.setMoveCamera(getBoxesLineCenter('x'), new THREE.Vector3(10, 5, 10))
+}
+
+function getBoxesLineCenter(axis: 'x' | 'z'): THREE.Vector3 {
+  // Находим все боксы на сцене
+  const boxes = scene.children.filter(child =>
+      child instanceof THREE.Mesh &&
+      child.geometry instanceof THREE.BoxGeometry
+  ) as THREE.Mesh[];
+
+  // Фильтруем боксы, расположенные на указанной оси
+  const axisBoxes = boxes.filter(box => {
+    if (axis === 'x') {
+      return box.position.z === 0 && box.position.y === 0;
+    } else {
+      return box.position.x === 0 && box.position.y === 0;
+    }
+  });
+
+  if (axisBoxes.length === 0) {
+    return new THREE.Vector3(0, 0, 0);
+  }
+
+  // Вычисляем среднее положение по оси
+  const positions = axisBoxes.map(box => box.position[axis]);
+  const min = Math.min(...positions);
+  const max = Math.max(...positions);
+  const center = (min + max) / 2;
+
+  if (axis === 'x') {
+    return new THREE.Vector3(center, 0, 0);
+  } else {
+    return new THREE.Vector3(0, 0, center);
+  }
 }
 
 onMounted(() => {
-  renderer = new THREE.WebGLRenderer({antialias: true, alpha: true ,depth: true});
+  renderer = new THREE.WebGLRenderer({antialias: true, depth: true});
   renderer.setSize(window.innerWidth, window.innerHeight)
 
   const cameraConfig = CameraConfig({width: window.innerWidth, height: window.innerHeight})
@@ -115,7 +156,7 @@ onMounted(() => {
   buildScene()
 
   renderer.render(scene, camera)
-  setCameraStart()
+  setCameraLeft()
 
   window.addEventListener('resize', () => {
     if (!renderer || !camera) return
@@ -139,6 +180,7 @@ onBeforeUnmount(() => {
   left: 0px;
   top: 0px;
 }
+
 .btn {
 
   padding: 10px 20px;

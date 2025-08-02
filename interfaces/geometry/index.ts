@@ -1,22 +1,26 @@
 import type * as Geometry from "./types";
-import {BoxGeometry} from "three";
-import {Types} from "./types";
+import { BoxGeometry, type BufferGeometry } from "three";
+import { Types } from "./types";
 
 export class GeometryInterface {
-    constructor(public config: Geometry.Config) {
-
-    }
-
-    getGeometry(config: Geometry.Config): Geometry.GeometryItem {
-        switch (config.type) {
-            case Types.BOX_GEOMETRY: {
-                const {width, height, depth} = config;
-                return new BoxGeometry(width, height, depth);
-            }
+    constructor(private config: Geometry.Config) {
+        if (!config) {
+            throw new Error("Geometry config is required");
         }
     }
 
-    get geometry(): Geometry.GeometryItem {
-        return this.getGeometry(this.config)
+    private createGeometry(): BufferGeometry {
+        switch (this.config.type) {
+            case Types.BOX_GEOMETRY: {
+                const { width = 1, height = 1, depth = 1 } = this.config;
+                return new BoxGeometry(width, height, depth);
+            }
+            default:
+                throw new Error(`Unsupported geometry type: ${this.config.type}`);
+        }
+    }
+
+    get geometry(): BufferGeometry {
+        return this.createGeometry();
     }
 }
