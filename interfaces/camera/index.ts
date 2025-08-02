@@ -78,7 +78,7 @@ export class CameraInterface {
         switch (config.type) {
             case Types.PERSPECTIVE: {
                 const {width, height} = config;
-                return new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+                return new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
             }
             // Можно добавить другие типы камер при необходимости
         }
