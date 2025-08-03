@@ -1,6 +1,7 @@
 import type * as Geometry from "./types";
-import { BoxGeometry, type BufferGeometry } from "three";
-import { Types } from "./types";
+import { BoxGeometry } from "three";
+import type {GeometryItem} from "./types";
+import { Types} from "./types";
 
 export class GeometryInterface {
     constructor(private config: Geometry.Config) {
@@ -9,7 +10,7 @@ export class GeometryInterface {
         }
     }
 
-    private createGeometry(): BufferGeometry {
+    private createGeometry(): GeometryItem {
         switch (this.config.type) {
             case Types.BOX_GEOMETRY: {
                 const { width = 1, height = 1, depth = 1 } = this.config;
@@ -20,7 +21,7 @@ export class GeometryInterface {
         }
     }
 
-    get geometry(): BufferGeometry {
+    get geometry(): GeometryItem {
         return this.createGeometry();
     }
 }
