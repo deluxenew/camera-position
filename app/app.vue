@@ -203,7 +203,7 @@ function calculateCameraPosition(
   // 6. Оптимизация расстояния бинарным поиском
   const optimizeDistance = (initialDistance: number): number => {
     let minDist: number = initialDistance * 0.5;
-    let maxDist: number = initialDistance * 1.3;
+    let maxDist: number = initialDistance * 1.2;
     const epsilon: number = 0.01;
 
     for (let i = 0; i < 20; i++) {
