@@ -31,3 +31,36 @@ export function getBoxesLineCenter(axis: 'x' | 'z', scene: THREE.Scene): THREE.V
         return new THREE.Vector3(0, 0, center);
     }
 }
+
+export function createBoxOnAxis(position: THREE.Vector3): THREE.Mesh {
+    const box = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshStandardMaterial({
+            color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
+            metalness: 0.1,
+            roughness: 0.5
+        })
+    );
+    box.position.copy(position);
+
+    return box;
+}
+
+export function createBoxesAlongX(count: number, startX: number = 0, step: number = 2): THREE.Mesh[] {
+    const boxes: THREE.Mesh[] = [];
+    for (let i = 0; i < count; i++) {
+        const x = startX + i * step;
+        boxes.push(createBoxOnAxis(new THREE.Vector3(x, 0, 0)));
+    }
+    return boxes;
+}
+
+// Функция для создания ящиков вдоль оси Z
+export function createBoxesAlongZ(count: number, startZ: number = 0, step: number = 2): THREE.Mesh[] {
+    const boxes: THREE.Mesh[] = [];
+    for (let i = 0; i < count; i++) {
+        const z = startZ + i * step;
+        boxes.push(createBoxOnAxis(new THREE.Vector3(0, 0, z)));
+    }
+    return boxes;
+}

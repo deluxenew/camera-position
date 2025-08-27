@@ -10,7 +10,7 @@ import type {
     AnimationAction
 } from "three";
 import * as THREE from "three";
-import getSmoothRotationMixer from "~~/interfaces/camera/utils";
+import {getSmoothRotationMixer} from "~~/interfaces/camera/utils";
 import type {AnimationControlledRenderer} from "~~/interfaces/animation";
 
 export class CameraInterface {
